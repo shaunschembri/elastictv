@@ -1,0 +1,47 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "normalizer": {
+        "title_normalizer": {
+          "type": "custom",
+          "char_filter": [
+            "special_characters_filter"
+          ],
+          "filter": [
+            "lowercase",
+            "asciifolding"
+          ]
+        }
+      },
+      "char_filter": {
+        "special_characters_filter": {
+          "pattern": "[^A-Za-z0-9]",
+          "type": "pattern_replace",
+          "replacement": ""
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "query": {
+        "type": "keyword",
+        "normalizer": "title_normalizer"
+      },
+      "attribute": {
+        "type": "keyword"
+      },
+      "year": {
+        "type": "short"
+      },
+      "type": {
+        "type": "keyword"
+      },
+      "@timestamp": {
+        "type": "date"
+      }
+    }
+  }
+}

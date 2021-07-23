@@ -1,0 +1,113 @@
+{
+    "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 0,
+        "analysis": {
+            "normalizer": {
+                "title_normalizer": {
+                    "type": "custom",
+                    "char_filter": [
+                        "special_characters_filter"
+                    ],
+                    "filter": [
+                        "lowercase",
+                        "asciifolding"
+                    ]
+                }
+            },
+            "char_filter": {
+                "special_characters_filter": {
+                    "pattern": "[^A-Za-z0-9]",
+                    "type": "pattern_replace",
+                    "replacement": ""
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "alias": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "normalizer": "title_normalizer"
+                    }
+                }
+            },
+            "credits": {
+                "properties": {
+                    "actor": {
+                        "type": "text"
+                    },
+                    "director": {
+                        "type": "text"
+                    },
+                    "other": {
+                        "type": "text"
+                    }
+                }
+            },
+            "country": {
+                "type": "keyword"
+            },
+            "description": {
+                "properties": {
+                    "text": {
+                        "type": "keyword"
+                    },
+                    "source": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "genre": {
+                "type": "keyword"
+            },
+            "image": {
+                "type": "keyword"
+            },
+            "ids": {
+                "properties": {
+                    "tmdb": {
+                        "type": "integer"
+                    },
+                    "imdb": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "language": {
+                "type": "keyword"
+            },
+            "rating": {
+                "properties": {
+                    "value": {
+                        "type": "half_float"
+                    },
+                    "source": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "title": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "normalizer": "title_normalizer"
+                    }
+                }
+            },
+            "type": {
+                "type": "keyword"
+            },
+            "year": {
+                "type": "short"
+            },
+            "@timestamp": {
+                "type": "date"
+            }
+        }
+    }
+}

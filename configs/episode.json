@@ -1,0 +1,61 @@
+{
+    "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 0
+    },
+    "mappings": {
+        "properties": {
+            "tvshow_id": {
+                "type": "integer"
+            },
+            "title": {
+                "type": "text"
+            },
+            "description": {
+                "properties": {
+                    "text": {
+                        "type": "keyword"
+                    },
+                    "source": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "image": {
+                "type": "keyword"
+            },
+            "ids": {
+                "properties": {
+                    "tmdb": {
+                        "type": "integer"
+                    },
+                    "imdb": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "season": {
+                "type": "short"
+            },
+            "episode": {
+                "type": "short"
+            },
+            "rating": {
+                "properties": {
+                    "value": {
+                        "type": "half_float"
+                    },
+                    "source": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "air_date": {
+                "type": "date"
+            },
+            "@timestamp": {
+                "type": "date"
+            }
+        }
+    }
+}
