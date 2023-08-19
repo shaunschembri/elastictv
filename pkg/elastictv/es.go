@@ -8,7 +8,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/esapi"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
 )
 
 func (estv ElasticTV) queryES(query *Query, index string, doc interface{}) (string, float64, error) {

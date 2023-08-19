@@ -3,7 +3,7 @@ package elastictv
 import (
 	"fmt"
 
-	"github.com/elastic/go-elasticsearch/v7"
+	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/spf13/viper"
 )
 
