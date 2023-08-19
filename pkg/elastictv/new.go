@@ -22,6 +22,8 @@ type index struct {
 func New() (*ElasticTV, error) {
 	es, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses:     viper.GetStringSlice("elastictv.elasticsearch.address"),
+		Username:      viper.GetString("elastictv.elasticsearch.username"),
+		Password:      viper.GetString("elastictv.elasticsearch.password"),
 		RetryOnStatus: []int{502, 503, 504, 429},
 		MaxRetries:    5,
 	})
