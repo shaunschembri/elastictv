@@ -14,7 +14,7 @@ type LookupCommonParams struct {
 	Other    []string
 	Country  []string
 	Genre    []string
-	IMDBID   string
+	IMDbID   string
 }
 
 func (c LookupCommonParams) hasCredits() bool {
@@ -23,7 +23,6 @@ func (c LookupCommonParams) hasCredits() bool {
 
 func (c LookupCommonParams) getCommonTitleQuery() *Query {
 	return NewQuery().
-		WithIMDbID(c.IMDBID).
 		WithTitles(c.hasCredits(), c.Title...).
 		WithGenres(c.Genre...).
 		WithDirectors(c.Director...).
@@ -32,39 +31,29 @@ func (c LookupCommonParams) getCommonTitleQuery() *Query {
 		WithCountries(c.Country...)
 }
 
-func (c LookupCommonParams) getSearchItems() []SearchTitlesParams {
-	items := []SearchTitlesParams{}
-
+func (c LookupCommonParams) getSearchItemsFromDetails(itemType string, year uint16) SearchItems {
+	items := make(SearchItems, 0)
 	for _, title := range c.Title {
-		items = append(items, SearchTitlesParams{
-			Attribute: TitleAttribute,
-			Query:     title,
-		})
+		items = append(items, NewSearchItem(itemType, TitleAttribute, title).WithYear(year))
 	}
 	for _, director := range c.Director {
-		items = append(items, SearchTitlesParams{
-			Attribute: DirectorAttribute,
-			Query:     director,
-		})
+		items = append(items, NewSearchItem(itemType, DirectorAttribute, director).WithYear(year))
 	}
 	for _, actor := range c.Actor {
-		items = append(items, SearchTitlesParams{
-			Attribute: ActorAttribute,
-			Query:     actor,
-		})
+		items = append(items, NewSearchItem(itemType, ActorAttribute, actor).WithYear(year))
 	}
 
 	return items
 }
 
-func (estv ElasticTV) lookupTitle(query *Query, searchItems []SearchTitlesParams, minScoreNoSearch, minScore float64) (*Title, float64, error) {
+func (estv ElasticTV) lookupTitle(query *Query, searchItems SearchItems, minScoreNoSearch, minScore float64) (*Title, float64, error) {
 	title := &Title{}
 	score, err := estv.getRecordWithScore(query, estv.Index.Title, title)
 	if err != nil {
 		return nil, 0, fmt.Errorf("error looking for title: %w", err)
 	}
 
-	if score > minScoreNoSearch {
+	if title.Title != "" && score > minScoreNoSearch {
 		return title, score, nil
 	}
 
@@ -84,23 +73,33 @@ func (estv ElasticTV) lookupTitle(query *Query, searchItems []SearchTitlesParams
 	return title, score, errors.ErrorOrNil()
 }
 
-func (estv ElasticTV) searchTitles(searchTitles []SearchTitlesParams) *multierror.Error {
+func (estv ElasticTV) searchTitles(searchTitles SearchItems) *multierror.Error {
 	var errors *multierror.Error
 
 	for _, item := range searchTitles {
-		query := NewQuery().WithSearchItem(item)
-		id, err := estv.GetRecordID(query, estv.Index.Search)
+		alreadySearched, err := estv.alreadySearched(item)
 		if err != nil {
-			errors = multierror.Append(errors, fmt.Errorf("error looking search history: %w", err))
+			errors = multierror.Append(errors, err)
 			continue
 		}
-		if id != "" {
+		if alreadySearched {
 			continue
 		}
 
 		var providerErrors *multierror.Error
 		for _, provider := range estv.Providers {
-			if err := provider.SearchTitles(item); err != nil {
+			var err error
+
+			switch item.Type {
+			case MovieType:
+				err = provider.SearchMovies(item)
+			case TVShowType:
+				err = provider.SearchTvShows(item)
+			default:
+				return nil
+			}
+
+			if err != nil {
 				providerErrors = multierror.Append(errors, err)
 			}
 		}
@@ -110,12 +109,12 @@ func (estv ElasticTV) searchTitles(searchTitles []SearchTitlesParams) *multierro
 			continue
 		}
 
-		if err := estv.IndexSearchTitle(item); err != nil {
-			errors = multierror.Append(errors, fmt.Errorf("error adding search item: %w", err))
+		if err := estv.indexSearchItem(item); err != nil {
+			errors = multierror.Append(errors, err)
 		}
 	}
 
-	if err := estv.RefreshIndices(); err != nil {
+	if err := estv.RefreshIndices(estv.Index.Title); err != nil {
 		errors = multierror.Append(errors, err)
 	}
 
@@ -130,114 +129,28 @@ type LookupMovieParams struct {
 func (estv ElasticTV) LookupMovie(params LookupMovieParams) (*Title, float64, error) {
 	query := params.LookupCommonParams.getCommonTitleQuery().
 		WithYearRange(params.Year, 1).
-		WithType(MovieType)
+		WithType(MovieType).
+		WithIMDbID(params.IMDbID)
 
-	searchItems := []SearchTitlesParams{}
-	for _, item := range params.LookupCommonParams.getSearchItems() {
-		item.Type = MovieType
-		item.Year = params.Year
-		searchItems = append(searchItems, item)
+	minScore := viper.GetFloat64("elastictv.movie.min_score")
+	if params.IMDbID != "" {
+		minScore = 0
 	}
 
 	return estv.lookupTitle(
 		query,
-		searchItems,
-		viper.GetFloat64("elastictv.movie.min_score_no_search"),
-		viper.GetFloat64("elastictv.movie.min_score"),
-	)
-}
-
-type LookupEpisodeParams struct {
-	LookupCommonParams
-	EpisodeTitle string
-	Season       uint16
-	Episode      uint16
-}
-
-func (estv ElasticTV) LookupEpisode(params LookupEpisodeParams) (*Title, *Episode, float64, error) {
-	query := params.LookupCommonParams.getCommonTitleQuery().
-		WithType(TVShowType)
-
-	searchItems := []SearchTitlesParams{}
-	for _, item := range params.LookupCommonParams.getSearchItems() {
-		item.Type = TVShowType
-		searchItems = append(searchItems, item)
-	}
-
-	minScore := viper.GetFloat64("elastictv.tvshow.min_score_credits")
-	if !params.LookupCommonParams.hasCredits() {
-		minScore = viper.GetFloat64("elastictv.tvshow.min_score_no_credits")
-	}
-
-	tvshow, score, err := estv.lookupTitle(
-		query,
-		searchItems,
+		estv.getSearchItemsForMovieLookup(params),
 		viper.GetFloat64("elastictv.movie.min_score_no_search"),
 		minScore,
 	)
-	if err != nil {
-		return nil, nil, 0, err
-	}
-
-	episode, err := estv.lookupEpisodeDetails(tvshow, params)
-	return tvshow, episode, score, err
 }
 
-func (estv ElasticTV) lookupEpisodeDetails(tvshow *Title, params LookupEpisodeParams) (*Episode, error) {
-	query := NewQuery().
-		WithTVShowID(tvshow.IDs.TMDb).
-		WithSeasonNumber(params.Season).
-		WithEpisodeNumber(params.Episode).
-		WithTitles(true, params.EpisodeTitle)
-
-	episode := Episode{}
-	score, err := estv.getRecordWithScore(query, estv.Index.Episode, &episode)
-	if err != nil {
-		return nil, fmt.Errorf("error querying for episode S%02dE%02d for tvshow [ %s ]: %w",
-			params.Season, params.Episode, tvshow.Title, err)
-	}
-	if score > 0 {
-		return &episode, nil
-	}
-
-	var errors *multierror.Error
-	for _, provider := range estv.Providers {
-		if err := provider.SearchEpisodes(tvshow, params.Season, params.Episode); err != nil {
-			errors = multierror.Append(errors, err)
+func (estv ElasticTV) getSearchItemsForMovieLookup(params LookupMovieParams) SearchItems {
+	if params.IMDbID != "" {
+		return SearchItems{
+			NewSearchItem(MovieType, IMDbIDAttribute, params.IMDbID),
 		}
 	}
 
-	if err := estv.RefreshIndices(); err != nil {
-		errors = multierror.Append(errors, err)
-	}
-
-	score, err = estv.getRecordWithScore(query, estv.Index.Episode, &episode)
-	if err != nil {
-		errors = multierror.Append(errors,
-			fmt.Errorf("error querying for episode S%02dE%02d for tvshow [ %s ]: %w",
-				params.Season, params.Episode, tvshow.Title, err))
-		return nil, errors
-	}
-	if score > 0 {
-		return &episode, nil
-	}
-
-	// Episode not found after search at providers, index an empty record to prevent
-	// search for the same episode again
-	episode = Episode{
-		TVShowID: tvshow.IDs.TMDb,
-		Season:   params.Season,
-		Episode:  params.Episode,
-	}
-
-	if err := estv.UpsertEpisode(episode); err != nil {
-		errors = multierror.Append(errors,
-			fmt.Errorf("error indexing episode S%02dE%02d for tvshow [ %s ]: %w",
-				params.Season, params.Episode, tvshow.Title, err))
-		return nil, errors
-	}
-
-	return nil, multierror.Append(errors,
-		fmt.Errorf("episode S%02dE%02d for tvshow [ %s ] not found",
-			params.Season, params.Episode, tvshow.Title))
+	return params.LookupCommonParams.getSearchItemsFromDetails(MovieType, params.Year)
 }

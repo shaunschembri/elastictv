@@ -5,8 +5,15 @@
     },
     "mappings": {
         "properties": {
-            "tvshow_id": {
-                "type": "integer"
+            "tvshow_ids": {
+                "properties": {
+                    "tmdb": {
+                        "type": "integer"
+                    },
+                    "imdb": {
+                        "type": "keyword"
+                    }
+                }
             },
             "title": {
                 "type": "text"

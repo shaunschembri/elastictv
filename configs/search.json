@@ -39,6 +39,12 @@
       "type": {
         "type": "keyword"
       },
+      "season": {
+        "type": "short"
+      },
+      "episode": {
+          "type": "short"
+      },
       "@timestamp": {
         "type": "date"
       }

@@ -10,7 +10,7 @@ import (
 	"github.com/shaunschembri/elastictv/pkg/elastictv"
 )
 
-func (t TMDb) searchTVShow(params elastictv.SearchTitlesParams) error {
+func (t TMDb) SearchTvShows(params elastictv.SearchItem) error {
 	switch params.Attribute {
 	case elastictv.TitleAttribute:
 		return t.searchTVShowByTitle(params.Query)
@@ -18,16 +18,22 @@ func (t TMDb) searchTVShow(params elastictv.SearchTitlesParams) error {
 		return t.searchTVShowByDirector(params.Query)
 	case elastictv.ActorAttribute:
 		return t.searchTVShowByActor(params.Query)
+	case elastictv.TMDbIDAttribute:
+		return t.getTVShowDetails(params.Query)
 	default:
 		return nil
 	}
 }
 
-func (t TMDb) searchTVShowByTitle(tvshowTitle string) error {
-	log.Printf("%s: Searching for tvshow by title [ %s ]",
-		t.Name(), tvshowTitle)
+func (t TMDb) searchTVShowByTitle(tvshowTitle any) error {
+	title, ok := tvshowTitle.(string)
+	if !ok {
+		return fmt.Errorf("%s: cannot convert query item [ %s ] to tv show title", t.Name(), tvshowTitle)
+	}
 
-	tvshows, err := t.tmdb.SearchTv(tvshowTitle, t.getDefaultOptions())
+	log.Printf("%s: Searching for tvshow by title [ %s ]", t.Name(), title)
+
+	tvshows, err := t.tmdb.SearchTv(title, t.getDefaultOptions())
 	if err != nil {
 		return fmt.Errorf("%s: error searching tvshow title [%s]: %w",
 			t.Name(), tvshowTitle, err)
@@ -43,11 +49,15 @@ func (t TMDb) searchTVShowByTitle(tvshowTitle string) error {
 	return errors.ErrorOrNil()
 }
 
-func (t TMDb) searchTVShowByDirector(director string) error {
-	log.Printf("%s: Searching for tvshow director credits [ %s ]",
-		t.Name(), director)
+func (t TMDb) searchTVShowByDirector(director any) error {
+	name, ok := director.(string)
+	if !ok {
+		return fmt.Errorf("%s: cannot convert query item [ %s ] to director name", t.Name(), director)
+	}
 
-	persons, err := t.tmdb.SearchPerson(director, t.getDefaultOptions())
+	log.Printf("%s: Searching for tvshow director credits [ %s ]", t.Name(), name)
+
+	persons, err := t.tmdb.SearchPerson(name, t.getDefaultOptions())
 	if err != nil {
 		return fmt.Errorf("%s: error searching for person [%s]: %w",
 			t.Name(), director, err)
@@ -76,11 +86,15 @@ func (t TMDb) searchTVShowByDirector(director string) error {
 	return errors.ErrorOrNil()
 }
 
-func (t TMDb) searchTVShowByActor(actor string) error {
-	log.Printf("%s: Searching for tvshow actor credits [ %s ]",
-		t.Name(), actor)
+func (t TMDb) searchTVShowByActor(actor any) error {
+	name, ok := actor.(string)
+	if !ok {
+		return fmt.Errorf("%s: cannot convert query item [ %s ] to director name", t.Name(), actor)
+	}
 
-	persons, err := t.tmdb.SearchPerson(actor, t.getDefaultOptions())
+	log.Printf("%s: Searching for tvshow actor credits [ %s ]", t.Name(), name)
+
+	persons, err := t.tmdb.SearchPerson(name, t.getDefaultOptions())
 	if err != nil {
 		return fmt.Errorf("%s: error searching for person [%s]: %w",
 			t.Name(), actor, err)
@@ -105,19 +119,37 @@ func (t TMDb) searchTVShowByActor(actor string) error {
 	return errors.ErrorOrNil()
 }
 
-func (t TMDb) getTVShowDetails(id int, originalLanguage string) error {
-	if t.hasBeenIndexed(id, elastictv.TVShowType) {
+func (t TMDb) getTVShowDetails(id any, originalLanguage ...string) error {
+	tmdbID, ok := id.(int)
+	if !ok {
+		return fmt.Errorf("%s: cannot convert id [ %s ] TMDb", t.Name(), id)
+	}
+
+	if t.hasBeenIndexed(tmdbID, elastictv.TVShowType) {
 		return nil
 	}
 
 	options := t.getDefaultOptions()
 	options["append_to_response"] = "translations,alternative_titles,credits,external_ids"
-	options["language"] = t.getDetailsLanguage(originalLanguage)
+	if len(originalLanguage) > 0 {
+		options["language"] = t.getDetailsLanguage(originalLanguage[0])
+	}
 
-	details, err := t.tmdb.GetTvInfo(id, options)
+	details, err := t.tmdb.GetTvInfo(tmdbID, options)
 	if err != nil {
 		return fmt.Errorf("%s: error getting details for ID %d: %w", t.Name(), id, err)
 	}
+
+	// If original language was not known before the above request then check if the original
+	// language is one that we want to keep and if so make the request again
+	if len(originalLanguage) == 0 && t.getDetailsLanguage(details.OriginalLanguage) != options["language"] {
+		options["language"] = t.getDetailsLanguage(details.OriginalLanguage)
+		details, err = t.tmdb.GetTvInfo(tmdbID, options)
+		if err != nil {
+			return fmt.Errorf("%s: error getting details for ID %d: %w", t.Name(), id, err)
+		}
+	}
+
 	log.Printf("%s: Got details for tvshow [ %s ]", t.Name(), details.Name)
 
 	tvshow := elastictv.Title{

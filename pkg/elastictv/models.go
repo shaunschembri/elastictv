@@ -3,8 +3,9 @@ package elastictv
 import "encoding/json"
 
 const (
-	MovieType  = "movie"
-	TVShowType = "tv"
+	MovieType   = "movie"
+	TVShowType  = "tv"
+	EpisodeType = "episode"
 )
 
 type Title struct {
@@ -32,9 +33,9 @@ type Episode struct {
 	Rating      *Rating     `json:"rating,omitempty"`
 	Timestamp   string      `json:"@timestamp"`
 	Title       string      `json:"title"`
-	TVShowID    int         `json:"tvshow_id,omitempty"`
-	Episode     uint16      `json:"episode"`
-	Season      uint16      `json:"season"`
+	TVShowIDs   IDs         `json:"tvshow_ids,omitempty"`
+	EpisodeNo   uint16      `json:"episode"`
+	SeasonNo    uint16      `json:"season"`
 }
 
 type Credits struct {

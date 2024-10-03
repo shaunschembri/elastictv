@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -92,13 +93,13 @@ func (estv ElasticTV) index(index, docID string, doc interface{}) error {
 	return nil
 }
 
-func (estv ElasticTV) RefreshIndices() error {
+func (estv ElasticTV) RefreshIndices(indices ...string) error {
+	if len(indices) == 0 {
+		return errors.New("no indices to refresh")
+	}
+
 	request := esapi.IndicesRefreshRequest{
-		Index: []string{
-			estv.Index.Title,
-			estv.Index.Episode,
-			estv.Index.Search,
-		},
+		Index: indices,
 	}
 
 	res, err := request.Do(context.Background(), estv.Client)
@@ -142,16 +143,11 @@ func (estv ElasticTV) UpsertTitle(title Title) error {
 	return estv.index(estv.Index.Title, recordID, title)
 }
 
-func (estv ElasticTV) IndexSearchTitle(params SearchTitlesParams) error {
-	params.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05.0000000")
-	return estv.index(estv.Index.Search, "", params)
-}
-
 func (estv ElasticTV) UpsertEpisode(episode Episode) error {
 	query := NewQuery().
-		WithTVShowID(episode.TVShowID).
-		WithEpisodeNumber(episode.Episode).
-		WithSeasonNumber(episode.Season)
+		WithTVShowTMDbID(episode.TVShowIDs.TMDb).
+		WithEpisodeNumber(episode.EpisodeNo).
+		WithSeasonNumber(episode.SeasonNo)
 
 	recordID, err := estv.GetRecordID(query, estv.Index.Episode)
 	if err != nil {

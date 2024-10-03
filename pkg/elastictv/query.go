@@ -1,7 +1,8 @@
 package elastictv
 
 import (
-	"regexp"
+	"fmt"
+	"strings"
 )
 
 type Query struct {
@@ -9,6 +10,7 @@ type Query struct {
 		Bool struct {
 			Should []interface{} `json:"should,omitempty"`
 			Must   []interface{} `json:"must,omitempty"`
+			Filter []interface{} `json:"filter,omitempty"`
 		} `json:"bool"`
 	} `json:"query"`
 }
@@ -26,15 +28,15 @@ type multiMatchQuery struct {
 }
 
 type termQuery struct {
-	IMDbID    string `json:"ids.imdb,omitempty"`
-	Type      string `json:"type,omitempty"`
-	Query     string `json:"query,omitempty"`
-	Attribute string `json:"attribute,omitempty"`
-	TMDbID    int    `json:"ids.tmdb,omitempty"`
-	TVShowID  int    `json:"tvshow_id,omitempty"`
-	Year      uint16 `json:"year,omitempty"`
-	Season    uint16 `json:"season,omitempty"`
-	Episode   uint16 `json:"episode,omitempty"`
+	IMDbID       string `json:"ids.imdb,omitempty"`
+	Type         string `json:"type,omitempty"`
+	Query        string `json:"query,omitempty"`
+	Attribute    string `json:"attribute,omitempty"`
+	TMDbID       int    `json:"ids.tmdb,omitempty"`
+	TVShowTMDbID int    `json:"tvshow_ids.tmdb,omitempty"`
+	Year         uint16 `json:"year,omitempty"`
+	SeasonNo     uint16 `json:"season,omitempty"`
+	EpisodeNo    uint16 `json:"episode,omitempty"`
 }
 
 type matchQuery struct {
@@ -81,16 +83,14 @@ func (q *Query) WithTitles(fuzzyMatch bool, titles ...string) *Query {
 	return q
 }
 
-func (q *Query) WithIMDbID(imdbURL string) *Query {
-	re := regexp.MustCompile(`/(tt[0-9]*)`)
-	id := re.FindStringSubmatch(imdbURL)
-	if len(id) != 2 {
+func (q *Query) WithIMDbID(imdbID string) *Query {
+	if !strings.HasPrefix(imdbID, "tt") {
 		return q
 	}
 
 	term := queryModels{
 		Term: &termQuery{
-			IMDbID: id[1],
+			IMDbID: imdbID,
 		},
 	}
 	q.Query.Bool.Must = append(q.Query.Bool.Must, term)
@@ -185,14 +185,14 @@ func (q *Query) WithType(itemType string) *Query {
 	return q
 }
 
-func (q *Query) WithTVShowID(tvshowID int) *Query {
+func (q *Query) WithTVShowTMDbID(tmdbTvShowID int) *Query {
 	term := queryModels{
 		Term: &termQuery{
-			TVShowID: tvshowID,
+			TVShowTMDbID: tmdbTvShowID,
 		},
 	}
 
-	q.Query.Bool.Must = append(q.Query.Bool.Must, term)
+	q.Query.Bool.Filter = append(q.Query.Bool.Filter, term)
 	return q
 }
 
@@ -203,7 +203,7 @@ func (q *Query) WithSeasonNumber(season uint16) *Query {
 
 	term := queryModels{
 		Term: &termQuery{
-			Season: season,
+			SeasonNo: season,
 		},
 	}
 
@@ -218,7 +218,7 @@ func (q *Query) WithEpisodeNumber(episode uint16) *Query {
 
 	term := queryModels{
 		Term: &termQuery{
-			Episode: episode,
+			EpisodeNo: episode,
 		},
 	}
 
@@ -239,32 +239,46 @@ func (q *Query) WithGenres(genres ...string) *Query {
 	return q
 }
 
-func (q *Query) WithSearchItem(searchItem SearchTitlesParams) *Query {
-	queryTerm := queryModels{
-		Term: &termQuery{
-			Query: searchItem.Query,
+func (q *Query) WithSearchItem(searchItem SearchItem) *Query {
+	q.Query.Bool.Must = append(q.Query.Bool.Must,
+		queryModels{
+			Term: &termQuery{
+				Query: fmt.Sprintf("%v", searchItem.Query),
+			},
 		},
-	}
-	attributeTerm := queryModels{
-		Term: &termQuery{
-			Attribute: searchItem.Attribute,
+		queryModels{
+			Term: &termQuery{
+				Attribute: searchItem.Attribute,
+			},
 		},
-	}
-	typeTerm := queryModels{
-		Term: &termQuery{
-			Type: searchItem.Type,
+		queryModels{
+			Term: &termQuery{
+				Type: searchItem.Type,
+			},
 		},
-	}
-	q.Query.Bool.Must = append(q.Query.Bool.Must, queryTerm, attributeTerm, typeTerm)
+	)
 
 	if searchItem.Year > 1900 {
-		yearTerm := queryModels{
+		q.Query.Bool.Must = append(q.Query.Bool.Must, queryModels{
 			Term: &termQuery{
 				Year: searchItem.Year,
 			},
-		}
+		})
+	}
 
-		q.Query.Bool.Must = append(q.Query.Bool.Must, yearTerm)
+	if searchItem.SeasonNo > 0 && searchItem.EpisodeNo > 0 {
+		q.Query.Bool.Must = append(q.Query.Bool.Must,
+			queryModels{
+				Term: &termQuery{
+					SeasonNo: searchItem.SeasonNo,
+				},
+			},
+			queryModels{
+				Term: &termQuery{
+					EpisodeNo: searchItem.EpisodeNo,
+				},
+			},
+		)
 	}
 
 	return q

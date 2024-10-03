@@ -10,7 +10,7 @@ import (
 	"github.com/shaunschembri/elastictv/pkg/elastictv"
 )
 
-func (t TMDb) searchMovie(params elastictv.SearchTitlesParams) error {
+func (t TMDb) SearchMovies(params elastictv.SearchItem) error {
 	switch params.Attribute {
 	case elastictv.TitleAttribute:
 		return t.searchMovieByTitle(params.Query, params.Year)
@@ -18,16 +18,47 @@ func (t TMDb) searchMovie(params elastictv.SearchTitlesParams) error {
 		return t.searchMovieByDirector(params.Query, params.Year)
 	case elastictv.ActorAttribute:
 		return t.searchMovieByActor(params.Query, params.Year)
+	case elastictv.IMDbIDAttribute:
+		return t.searchMovieByIMDbID(params.Query)
 	default:
 		return nil
 	}
 }
 
-func (t TMDb) searchMovieByTitle(movieTitle string, year uint16) error {
+func (t TMDb) searchMovieByIMDbID(imdbID any) error {
+	id, ok := imdbID.(string)
+	if !ok {
+		return fmt.Errorf("%s: cannot convert query item [ %s ] to IMDb ID", t.Name(), imdbID)
+	}
+
+	log.Printf("%s: Searching for movie by IMDbID [ %s ]", t.Name(), imdbID)
+
+	findResults, err := t.tmdb.GetFind(id, "imdb_id", nil)
+	if err != nil {
+		return fmt.Errorf("%s: error searching movie by IMDbID [ %s ]: %w",
+			t.Name(), imdbID, err)
+	}
+
+	var errors *multierror.Error
+	for _, movie := range findResults.MovieResults {
+		if err := t.getMovieDetails(movie.ID, movie.OriginalLanguage); err != nil {
+			errors = multierror.Append(errors, err)
+		}
+	}
+
+	return errors.ErrorOrNil()
+}
+
+func (t TMDb) searchMovieByTitle(movieTitle any, year uint16) error {
+	title, ok := movieTitle.(string)
+	if !ok {
+		return fmt.Errorf("%s: cannot convert query item [ %s ] to tv show title", t.Name(), movieTitle)
+	}
+
 	log.Printf("%s: Searching for movie by title [ %s | Year: %d ]",
 		t.Name(), movieTitle, year)
 
-	movies, err := t.tmdb.SearchMovie(movieTitle, t.getDefaultOptions())
+	movies, err := t.tmdb.SearchMovie(title, t.getDefaultOptions())
 	if err != nil {
 		return fmt.Errorf("%s: error searching movie title [ %s ]: %w",
 			t.Name(), movieTitle, err)
@@ -47,11 +78,16 @@ func (t TMDb) searchMovieByTitle(movieTitle string, year uint16) error {
 	return errors.ErrorOrNil()
 }
 
-func (t TMDb) searchMovieByDirector(director string, year uint16) error {
+func (t TMDb) searchMovieByDirector(director any, year uint16) error {
+	name, ok := director.(string)
+	if !ok {
+		return fmt.Errorf("%s: cannot convert query item [ %s ] to director name", t.Name(), director)
+	}
+
 	log.Printf("%s: Searching for movie director credits [ %s | Year: %d ]",
 		t.Name(), director, year)
 
-	persons, err := t.tmdb.SearchPerson(director, t.getDefaultOptions())
+	persons, err := t.tmdb.SearchPerson(name, t.getDefaultOptions())
 	if err != nil {
 		return fmt.Errorf("%s: error searching for person [ %s ]: %w",
 			t.Name(), director, err)
@@ -84,11 +120,16 @@ func (t TMDb) searchMovieByDirector(director string, year uint16) error {
 	return errors.ErrorOrNil()
 }
 
-func (t TMDb) searchMovieByActor(actor string, year uint16) error {
+func (t TMDb) searchMovieByActor(actor any, year uint16) error {
+	name, ok := actor.(string)
+	if !ok {
+		return fmt.Errorf("%s: cannot convert query item [ %s ] to director name", t.Name(), actor)
+	}
+
 	log.Printf("%s: Searching for movie actor credits [ %s | Year: %d ]",
 		t.Name(), actor, year)
 
-	persons, err := t.tmdb.SearchPerson(actor, t.getDefaultOptions())
+	persons, err := t.tmdb.SearchPerson(name, t.getDefaultOptions())
 	if err != nil {
 		return fmt.Errorf("%s: error searching for person [%s]: %w",
 			t.Name(), actor, err)

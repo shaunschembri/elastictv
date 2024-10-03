@@ -59,17 +59,6 @@ func (t TMDb) Init(estv *elastictv.ElasticTV) (elastictv.SearchableProvider, err
 	return t, nil
 }
 
-func (t TMDb) SearchTitles(params elastictv.SearchTitlesParams) error {
-	switch params.Type {
-	case elastictv.MovieType:
-		return t.searchMovie(params)
-	case elastictv.TVShowType:
-		return t.searchTVShow(params)
-	default:
-		return nil
-	}
-}
-
 func (t TMDb) getDefaultOptions() map[string]string {
 	return map[string]string{
 		"language": t.language,
