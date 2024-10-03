@@ -12,13 +12,13 @@ import (
 
 func (t TMDb) SearchMovies(params elastictv.SearchItem) error {
 	switch params.Attribute {
-	case elastictv.TitleAttribute:
+	case elastictv.TitleSearchAttribute:
 		return t.searchMovieByTitle(params.Query, params.Year)
-	case elastictv.DirectorAttribute:
+	case elastictv.DirectorSearchAttribute:
 		return t.searchMovieByDirector(params.Query, params.Year)
-	case elastictv.ActorAttribute:
+	case elastictv.ActorSearchAttribute:
 		return t.searchMovieByActor(params.Query, params.Year)
-	case elastictv.IMDbIDAttribute:
+	case elastictv.IMDbIDSearchAttribute:
 		return t.searchMovieByIMDbID(params.Query)
 	default:
 		return nil

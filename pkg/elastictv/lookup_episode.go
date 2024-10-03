@@ -24,7 +24,7 @@ func (estv ElasticTV) LookupEpisode(params LookupEpisodeParams) (*Title, *Episod
 
 func (estv ElasticTV) lookupEpisodeFromEpisodeIMDbID(params LookupEpisodeParams) (*Title, *Episode, float64, error) {
 	episodeQuery := NewQuery().WithIMDbID(params.IMDbID)
-	episodeSearchItem := NewSearchItem(EpisodeType, IMDbIDAttribute, params.IMDbID)
+	episodeSearchItem := NewSearchItem(EpisodeType, IMDbIDSearchAttribute, params.IMDbID)
 
 	episode, err := estv.lookupEpisodeDetails(episodeQuery, episodeSearchItem)
 	if err != nil {
@@ -38,11 +38,11 @@ func (estv ElasticTV) lookupEpisodeFromEpisodeIMDbID(params LookupEpisodeParams)
 
 	tvshow, score, err := estv.lookupTitle(
 		NewQuery().WithTMDbID(episode.TVShowIDs.TMDb),
-		SearchItems{NewSearchItem(TVShowType, TMDbIDAttribute, episode.TVShowIDs.TMDb)},
+		SearchItems{NewSearchItem(TvShowType, TMDbIDSearchAttribute, episode.TVShowIDs.TMDb)},
 		0, 0,
 	)
 	if err != nil {
-		return nil, nil, score, fmt.Errorf("error looking for title: %w", err)
+		return nil, nil, score, err
 	}
 
 	return tvshow, episode, score, err
@@ -50,7 +50,7 @@ func (estv ElasticTV) lookupEpisodeFromEpisodeIMDbID(params LookupEpisodeParams)
 
 func (estv ElasticTV) lookupEpisodeFromDetails(params LookupEpisodeParams) (*Title, *Episode, float64, error) {
 	query := params.LookupCommonParams.getCommonTitleQuery().
-		WithType(TVShowType)
+		WithType(TvShowType)
 
 	minScore := viper.GetFloat64("elastictv.tvshow.min_score_credits")
 	if !params.LookupCommonParams.hasCredits() {
@@ -59,7 +59,7 @@ func (estv ElasticTV) lookupEpisodeFromDetails(params LookupEpisodeParams) (*Tit
 
 	tvshow, score, err := estv.lookupTitle(
 		query,
-		params.LookupCommonParams.getSearchItemsFromDetails(TVShowType, 0),
+		params.LookupCommonParams.getSearchItemsFromDetails(TvShowType, 0),
 		viper.GetFloat64("elastictv.movie.min_score_no_search"),
 		minScore,
 	)
@@ -76,7 +76,7 @@ func (estv ElasticTV) lookupEpisodeFromDetails(params LookupEpisodeParams) (*Tit
 		WithEpisodeNumber(params.EpisodeNo)
 
 	searchParams := SearchItem{
-		Attribute: TMDbIDAttribute,
+		Attribute: TMDbIDSearchAttribute,
 		Query:     tvshow.IDs.TMDb,
 		SeasonNo:  params.SeasonNo,
 		EpisodeNo: params.EpisodeNo,

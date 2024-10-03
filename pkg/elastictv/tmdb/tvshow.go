@@ -12,13 +12,13 @@ import (
 
 func (t TMDb) SearchTvShows(params elastictv.SearchItem) error {
 	switch params.Attribute {
-	case elastictv.TitleAttribute:
+	case elastictv.TitleSearchAttribute:
 		return t.searchTVShowByTitle(params.Query)
-	case elastictv.DirectorAttribute:
+	case elastictv.DirectorSearchAttribute:
 		return t.searchTVShowByDirector(params.Query)
-	case elastictv.ActorAttribute:
+	case elastictv.ActorSearchAttribute:
 		return t.searchTVShowByActor(params.Query)
-	case elastictv.TMDbIDAttribute:
+	case elastictv.TMDbIDSearchAttribute:
 		return t.getTVShowDetails(params.Query)
 	default:
 		return nil
@@ -125,7 +125,7 @@ func (t TMDb) getTVShowDetails(id any, originalLanguage ...string) error {
 		return fmt.Errorf("%s: cannot convert id [ %s ] TMDb", t.Name(), id)
 	}
 
-	if t.hasBeenIndexed(tmdbID, elastictv.TVShowType) {
+	if t.hasBeenIndexed(tmdbID, elastictv.TvShowType) {
 		return nil
 	}
 
@@ -170,7 +170,7 @@ func (t TMDb) getTVShowDetails(id any, originalLanguage ...string) error {
 		Language: t.getLanguage(details.SpokenLanguages),
 		Credits:  t.getCredits(details.Credits.Cast, details.Credits.Crew),
 		Alias:    t.getTVAliases(*details.Translations, *details.AlternativeTitles, details.Name),
-		Type:     elastictv.TVShowType,
+		Type:     elastictv.TvShowType,
 	}
 
 	if err := t.estv.UpsertTitle(tvshow); err != nil {

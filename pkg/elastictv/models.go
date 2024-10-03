@@ -1,11 +1,7 @@
 package elastictv
 
-import "encoding/json"
-
-const (
-	MovieType   = "movie"
-	TVShowType  = "tv"
-	EpisodeType = "episode"
+import (
+	"encoding/json"
 )
 
 type Title struct {
@@ -20,7 +16,7 @@ type Title struct {
 	Rating      *Rating     `json:"rating,omitempty"`
 	Timestamp   string      `json:"@timestamp"`
 	Title       string      `json:"title"`
-	Type        string      `json:"type"`
+	Type        Type        `json:"type"`
 	Year        uint16      `json:"year,omitempty"`
 	Tagline     string      `json:"tagline,omitempty"`
 }

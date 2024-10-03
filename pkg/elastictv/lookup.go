@@ -31,16 +31,16 @@ func (c LookupCommonParams) getCommonTitleQuery() *Query {
 		WithCountries(c.Country...)
 }
 
-func (c LookupCommonParams) getSearchItemsFromDetails(itemType string, year uint16) SearchItems {
+func (c LookupCommonParams) getSearchItemsFromDetails(docType Type, year uint16) SearchItems {
 	items := make(SearchItems, 0)
 	for _, title := range c.Title {
-		items = append(items, NewSearchItem(itemType, TitleAttribute, title).WithYear(year))
+		items = append(items, NewSearchItem(docType, TitleSearchAttribute, title).WithYear(year))
 	}
 	for _, director := range c.Director {
-		items = append(items, NewSearchItem(itemType, DirectorAttribute, director).WithYear(year))
+		items = append(items, NewSearchItem(docType, DirectorSearchAttribute, director).WithYear(year))
 	}
 	for _, actor := range c.Actor {
-		items = append(items, NewSearchItem(itemType, ActorAttribute, actor).WithYear(year))
+		items = append(items, NewSearchItem(docType, ActorSearchAttribute, actor).WithYear(year))
 	}
 
 	return items
@@ -93,7 +93,7 @@ func (estv ElasticTV) searchTitles(searchTitles SearchItems) *multierror.Error {
 			switch item.Type {
 			case MovieType:
 				err = provider.SearchMovies(item)
-			case TVShowType:
+			case TvShowType:
 				err = provider.SearchTvShows(item)
 			default:
 				return nil
@@ -148,7 +148,7 @@ func (estv ElasticTV) LookupMovie(params LookupMovieParams) (*Title, float64, er
 func (estv ElasticTV) getSearchItemsForMovieLookup(params LookupMovieParams) SearchItems {
 	if params.IMDbID != "" {
 		return SearchItems{
-			NewSearchItem(MovieType, IMDbIDAttribute, params.IMDbID),
+			NewSearchItem(MovieType, IMDbIDSearchAttribute, params.IMDbID),
 		}
 	}
 

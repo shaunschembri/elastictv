@@ -185,10 +185,10 @@ func (t TMDb) getCredits(cast tmdb.CastCredit, crew tmdb.CrewCredit) elastictv.C
 	return credits
 }
 
-func (t TMDb) hasBeenIndexed(id int, titleType string) bool {
+func (t TMDb) hasBeenIndexed(id int, docType elastictv.Type) bool {
 	query := elastictv.NewQuery().
 		WithTMDbID(id).
-		WithType(titleType)
+		WithType(docType)
 
 	docID, err := t.estv.GetRecordID(query, t.estv.Index.Title)
 	if err != nil || docID == "" {

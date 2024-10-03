@@ -6,31 +6,43 @@ import (
 	"time"
 )
 
+type SearchAttribute int
+
+var searchAttributesList = [...]string{"title", "director", "actor", "imdb_id", "tmdb_id"}
+
 const (
-	TitleAttribute    = "title"
-	DirectorAttribute = "director"
-	ActorAttribute    = "actor"
-	IMDbIDAttribute   = "imdbID"
-	TMDbIDAttribute   = "tmdbID"
+	TitleSearchAttribute SearchAttribute = iota + 1
+	DirectorSearchAttribute
+	ActorSearchAttribute
+	IMDbIDSearchAttribute
+	TMDbIDSearchAttribute
 )
 
+func (id SearchAttribute) MarshalText() ([]byte, error) {
+	return []byte(searchAttributesList[id-1]), nil
+}
+
+func (id SearchAttribute) String() string {
+	return searchAttributesList[id-1]
+}
+
 type SearchItem struct {
-	Query     any    `json:"query,omitempty"`
-	Attribute string `json:"attribute,omitempty"`
-	Year      uint16 `json:"year,omitempty"`
-	SeasonNo  uint16 `json:"season,omitempty"`
-	EpisodeNo uint16 `json:"episode,omitempty"`
-	Type      string `json:"type,omitempty"`
-	Timestamp string `json:"@timestamp,omitempty"`
+	Query     any             `json:"query,omitempty"`
+	Attribute SearchAttribute `json:"attribute,omitempty"`
+	Year      uint16          `json:"year,omitempty"`
+	SeasonNo  uint16          `json:"season,omitempty"`
+	EpisodeNo uint16          `json:"episode,omitempty"`
+	Type      Type            `json:"type,omitempty"`
+	Timestamp string          `json:"@timestamp,omitempty"`
 }
 
 type SearchItems []SearchItem
 
-func NewSearchItem(titleType, attribute string, query any) SearchItem {
+func NewSearchItem(docType Type, attribute SearchAttribute, query any) SearchItem {
 	params := SearchItem{
+		Type:      docType,
 		Attribute: attribute,
 		Query:     query,
-		Type:      titleType,
 	}
 
 	return params

@@ -28,15 +28,15 @@ type multiMatchQuery struct {
 }
 
 type termQuery struct {
-	IMDbID       string `json:"ids.imdb,omitempty"`
-	Type         string `json:"type,omitempty"`
-	Query        string `json:"query,omitempty"`
-	Attribute    string `json:"attribute,omitempty"`
-	TMDbID       int    `json:"ids.tmdb,omitempty"`
-	TVShowTMDbID int    `json:"tvshow_ids.tmdb,omitempty"`
-	Year         uint16 `json:"year,omitempty"`
-	SeasonNo     uint16 `json:"season,omitempty"`
-	EpisodeNo    uint16 `json:"episode,omitempty"`
+	IMDbID       string          `json:"ids.imdb,omitempty"`
+	Type         Type            `json:"type,omitempty"`
+	Query        string          `json:"query,omitempty"`
+	Attribute    SearchAttribute `json:"attribute,omitempty"`
+	TMDbID       int             `json:"ids.tmdb,omitempty"`
+	TVShowTMDbID int             `json:"tvshow_ids.tmdb,omitempty"`
+	Year         uint16          `json:"year,omitempty"`
+	SeasonNo     uint16          `json:"season,omitempty"`
+	EpisodeNo    uint16          `json:"episode,omitempty"`
 }
 
 type matchQuery struct {
@@ -174,10 +174,10 @@ func (q *Query) WithYearRange(year, diff uint16) *Query {
 	return q
 }
 
-func (q *Query) WithType(itemType string) *Query {
+func (q *Query) WithType(docType Type) *Query {
 	term := queryModels{
 		Term: &termQuery{
-			Type: itemType,
+			Type: docType,
 		},
 	}
 

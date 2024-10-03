@@ -9,7 +9,7 @@ import (
 )
 
 func (t TMDb) SearchEpisode(searchItem elastictv.SearchItem) error {
-	if searchItem.Attribute == elastictv.IMDbIDAttribute {
+	if searchItem.Attribute == elastictv.IMDbIDSearchAttribute {
 		return t.searchEpisodeFromIMDbID(searchItem)
 	}
 
@@ -17,7 +17,7 @@ func (t TMDb) SearchEpisode(searchItem elastictv.SearchItem) error {
 }
 
 func (t TMDb) searchEpisodeFromDetails(searchItem elastictv.SearchItem) error {
-	if searchItem.Attribute != elastictv.TMDbIDAttribute &&
+	if searchItem.Attribute != elastictv.TMDbIDSearchAttribute &&
 		searchItem.Type != elastictv.EpisodeType &&
 		searchItem.SeasonNo > 0 &&
 		searchItem.EpisodeNo > 0 {
@@ -83,7 +83,7 @@ func (t TMDb) searchEpisodeFromIMDbID(searchItem elastictv.SearchItem) error {
 	for _, episode := range findResults.TvEpisodeResults {
 		episodeSearchItem := elastictv.SearchItem{
 			Query:     episode.ShowID,
-			Attribute: elastictv.TMDbIDAttribute,
+			Attribute: elastictv.TMDbIDSearchAttribute,
 			SeasonNo:  uint16(episode.SeasonNumber),
 			EpisodeNo: uint16(episode.EpisodeNumber),
 			Type:      elastictv.EpisodeType,
