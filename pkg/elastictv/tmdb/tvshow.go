@@ -119,10 +119,10 @@ func (t TMDb) searchTVShowByActor(actor any) error {
 	return errors.ErrorOrNil()
 }
 
-func (t TMDb) getTVShowDetails(id any, originalLanguage ...string) error {
-	tmdbID, ok := id.(int)
+func (t TMDb) getTVShowDetails(tvShowID any, originalLanguage ...string) error {
+	tmdbID, ok := tvShowID.(int)
 	if !ok {
-		return fmt.Errorf("%s: cannot convert id [ %s ] TMDb", t.Name(), id)
+		return fmt.Errorf("%s: cannot convert id [ %s ] TMDb", t.Name(), tvShowID)
 	}
 
 	if t.hasBeenIndexed(tmdbID, elastictv.TvShowType) {
@@ -131,22 +131,24 @@ func (t TMDb) getTVShowDetails(id any, originalLanguage ...string) error {
 
 	options := t.getDefaultOptions()
 	options["append_to_response"] = "translations,alternative_titles,credits,external_ids"
+
 	if len(originalLanguage) > 0 {
 		options["language"] = t.getDetailsLanguage(originalLanguage[0])
 	}
 
 	details, err := t.tmdb.GetTvInfo(tmdbID, options)
 	if err != nil {
-		return fmt.Errorf("%s: error getting details for ID %d: %w", t.Name(), id, err)
+		return fmt.Errorf("%s: error getting details for ID %d: %w", t.Name(), tmdbID, err)
 	}
 
 	// If original language was not known before the above request then check if the original
 	// language is one that we want to keep and if so make the request again
 	if len(originalLanguage) == 0 && t.getDetailsLanguage(details.OriginalLanguage) != options["language"] {
 		options["language"] = t.getDetailsLanguage(details.OriginalLanguage)
+
 		details, err = t.tmdb.GetTvInfo(tmdbID, options)
 		if err != nil {
-			return fmt.Errorf("%s: error getting details for ID %d: %w", t.Name(), id, err)
+			return fmt.Errorf("%s: error getting details for ID %d: %w", t.Name(), tmdbID, err)
 		}
 	}
 
@@ -180,14 +182,14 @@ func (t TMDb) getTVShowDetails(id any, originalLanguage ...string) error {
 	return nil
 }
 
-func (t TMDb) getTVAliases(tr tmdb.TvTranslations, at tmdb.TvAlternativeTitles, name string) []string {
+func (t TMDb) getTVAliases(tr tmdb.TvTranslations, altTitles tmdb.TvAlternativeTitles, name string) []string {
 	aliases := make([]string, 0)
 
 	for _, translation := range tr.Translations {
 		aliases = t.addAlias(aliases, translation.Iso3166_1, translation.Data.Name, name)
 	}
 
-	for _, altTitle := range at.Results {
+	for _, altTitle := range altTitles.Results {
 		aliases = t.addAlias(aliases, altTitle.Iso3166_1, altTitle.Title, name)
 	}
 

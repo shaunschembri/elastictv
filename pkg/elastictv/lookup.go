@@ -36,9 +36,11 @@ func (c LookupCommonParams) getSearchItemsFromDetails(docType Type, year uint16)
 	for _, title := range c.Title {
 		items = append(items, NewSearchItem(docType, TitleSearchAttribute, title).WithYear(year))
 	}
+
 	for _, director := range c.Director {
 		items = append(items, NewSearchItem(docType, DirectorSearchAttribute, director).WithYear(year))
 	}
+
 	for _, actor := range c.Actor {
 		items = append(items, NewSearchItem(docType, ActorSearchAttribute, actor).WithYear(year))
 	}
@@ -61,12 +63,14 @@ func (estv ElasticTV) lookupTitle(query *Query, searchItems SearchItems, minScor
 	score, err = estv.getRecordWithScore(query, estv.Index.Title, title)
 	if err != nil {
 		errors = multierror.Append(errors, fmt.Errorf("error looking for title: %w", err))
+
 		return nil, 0, errors
 	}
 
 	if score < minScore {
 		errors = multierror.Append(errors,
 			fmt.Errorf("found title [%s] has too low score %3.1f (min %3.1f)", title.Title, score, minScore))
+
 		return nil, score, errors
 	}
 
@@ -78,15 +82,12 @@ func (estv ElasticTV) searchTitles(searchTitles SearchItems) *multierror.Error {
 
 	for _, item := range searchTitles {
 		alreadySearched, err := estv.alreadySearched(item)
-		if err != nil {
+		if err != nil || alreadySearched {
 			errors = multierror.Append(errors, err)
-			continue
-		}
-		if alreadySearched {
+
 			continue
 		}
 
-		var providerErrors *multierror.Error
 		for _, provider := range estv.Providers {
 			var err error
 
@@ -100,13 +101,8 @@ func (estv ElasticTV) searchTitles(searchTitles SearchItems) *multierror.Error {
 			}
 
 			if err != nil {
-				providerErrors = multierror.Append(errors, err)
+				errors = multierror.Append(errors, err)
 			}
-		}
-
-		if providerErrors.ErrorOrNil() != nil {
-			errors = multierror.Append(errors, providerErrors)
-			continue
 		}
 
 		if err := estv.indexSearchItem(item); err != nil {

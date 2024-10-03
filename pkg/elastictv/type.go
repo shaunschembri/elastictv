@@ -30,10 +30,11 @@ func (t *Type) UnmarshalText(text []byte) error {
 		return fmt.Errorf("type [%s] is not valid", string(text))
 	}
 
-	*t = Type(docType)
+	*t = docType
+
 	return nil
 }
 
-func (id Type) String() string {
-	return typesList[id-1]
+func (t Type) String() string {
+	return typesList[t-1]
 }

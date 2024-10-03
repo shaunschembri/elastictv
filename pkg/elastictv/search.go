@@ -84,6 +84,7 @@ func (s SearchItem) String() string {
 
 func (estv ElasticTV) alreadySearched(item SearchItem) (bool, error) {
 	query := NewQuery().WithSearchItem(item)
+
 	id, err := estv.GetRecordID(query, estv.Index.Search)
 	if err != nil {
 		return false, fmt.Errorf("failed to fetch search item : %w", err)

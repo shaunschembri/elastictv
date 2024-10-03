@@ -84,6 +84,7 @@ func (estv ElasticTV) lookupEpisodeFromDetails(params LookupEpisodeParams) (*Tit
 	}
 
 	episode, err := estv.lookupEpisodeDetails(query, searchParams)
+
 	return tvshow, episode, score, err
 }
 
@@ -98,11 +99,8 @@ func (estv ElasticTV) lookupEpisodeDetails(query *Query, searchItem SearchItem) 
 	}
 
 	alreadySearched, err := estv.alreadySearched(searchItem)
-	if err != nil {
+	if err != nil || alreadySearched {
 		return nil, err
-	}
-	if alreadySearched {
-		return nil, nil
 	}
 
 	var errors *multierror.Error

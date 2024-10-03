@@ -71,6 +71,7 @@ func (t TMDb) getYear(releaseDate string) uint16 {
 	}
 
 	year, _ := strconv.Atoi(releaseDate[:4])
+
 	return uint16(year)
 }
 
@@ -100,6 +101,7 @@ func (t TMDb) getLanguage(languages tmdb.SpokenLanguages) string {
 	if t.useOriginalSpokenLanguage {
 		return languages[0].Name
 	}
+
 	return languages[0].EnglishName
 }
 
@@ -130,6 +132,7 @@ func (t TMDb) addAlias(aliases []string, isoCode, name, title string) []string {
 	if t.contains(aliases, name) {
 		return aliases
 	}
+
 	aliases = append(aliases, name)
 
 	return aliases

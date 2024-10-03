@@ -25,21 +25,22 @@ func (t TMDb) SearchMovies(params elastictv.SearchItem) error {
 	}
 }
 
-func (t TMDb) searchMovieByIMDbID(imdbID any) error {
-	id, ok := imdbID.(string)
+func (t TMDb) searchMovieByIMDbID(movieID any) error {
+	imdbID, ok := movieID.(string)
 	if !ok {
 		return fmt.Errorf("%s: cannot convert query item [ %s ] to IMDb ID", t.Name(), imdbID)
 	}
 
 	log.Printf("%s: Searching for movie by IMDbID [ %s ]", t.Name(), imdbID)
 
-	findResults, err := t.tmdb.GetFind(id, "imdb_id", nil)
+	findResults, err := t.tmdb.GetFind(imdbID, "imdb_id", nil)
 	if err != nil {
 		return fmt.Errorf("%s: error searching movie by IMDbID [ %s ]: %w",
 			t.Name(), imdbID, err)
 	}
 
 	var errors *multierror.Error
+
 	for _, movie := range findResults.MovieResults {
 		if err := t.getMovieDetails(movie.ID, movie.OriginalLanguage); err != nil {
 			errors = multierror.Append(errors, err)
@@ -65,6 +66,7 @@ func (t TMDb) searchMovieByTitle(movieTitle any, year uint16) error {
 	}
 
 	var errors *multierror.Error
+
 	for _, movie := range movies.Results {
 		if t.getYear(movie.ReleaseDate) != year {
 			continue
@@ -94,6 +96,7 @@ func (t TMDb) searchMovieByDirector(director any, year uint16) error {
 	}
 
 	var errors *multierror.Error
+
 	for _, person := range persons.Results {
 		credits, err := t.tmdb.GetPersonMovieCredits(person.ID, t.getDefaultOptions())
 		if err != nil {
@@ -158,8 +161,8 @@ func (t TMDb) searchMovieByActor(actor any, year uint16) error {
 	return errors.ErrorOrNil()
 }
 
-func (t TMDb) getMovieDetails(id int, originalLanguage string) error {
-	if t.hasBeenIndexed(id, elastictv.MovieType) {
+func (t TMDb) getMovieDetails(tmdbID int, originalLanguage string) error {
+	if t.hasBeenIndexed(tmdbID, elastictv.MovieType) {
 		return nil
 	}
 
@@ -167,10 +170,11 @@ func (t TMDb) getMovieDetails(id int, originalLanguage string) error {
 	options["append_to_response"] = "translations,alternative_titles,credits"
 	options["language"] = t.getDetailsLanguage(originalLanguage)
 
-	details, err := t.tmdb.GetMovieInfo(id, options)
+	details, err := t.tmdb.GetMovieInfo(tmdbID, options)
 	if err != nil {
-		return fmt.Errorf("%s: error getting details for ID %d: %w", t.Name(), id, err)
+		return fmt.Errorf("%s: error getting details for ID %d: %w", t.Name(), tmdbID, err)
 	}
+
 	year := t.getYear(details.ReleaseDate)
 	log.Printf("%s: Got details for movie [ %s | Year: %d ]",
 		t.Name(), details.Title, year)
@@ -204,14 +208,14 @@ func (t TMDb) getMovieDetails(id int, originalLanguage string) error {
 	return nil
 }
 
-func (t TMDb) getMovieAliases(tr tmdb.MovieTranslations, at tmdb.MovieAlternativeTitles, title string) []string {
+func (t TMDb) getMovieAliases(tr tmdb.MovieTranslations, altTitles tmdb.MovieAlternativeTitles, title string) []string {
 	aliases := make([]string, 0)
 
 	for _, translation := range tr.Translations {
 		aliases = t.addAlias(aliases, translation.Iso3166_1, translation.Data.Title, title)
 	}
 
-	for _, altTitle := range at.Titles {
+	for _, altTitle := range altTitles.Titles {
 		aliases = t.addAlias(aliases, altTitle.Iso3166_1, altTitle.Title, title)
 	}
 

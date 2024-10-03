@@ -20,7 +20,7 @@ type index struct {
 }
 
 func New() (*ElasticTV, error) {
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
+	client, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses:     viper.GetStringSlice("elastictv.elasticsearch.address"),
 		Username:      viper.GetString("elastictv.elasticsearch.username"),
 		Password:      viper.GetString("elastictv.elasticsearch.password"),
@@ -32,7 +32,7 @@ func New() (*ElasticTV, error) {
 	}
 
 	return &ElasticTV{
-		Client:    es,
+		Client:    client,
 		Providers: make([]SearchableProvider, 0),
 		Index: index{
 			Title:   viper.GetString("elastictv.elasticsearch.index.title"),

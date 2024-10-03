@@ -19,5 +19,6 @@ func (estv *ElasticTV) AddProvider(p SearchableProvider) error {
 	}
 
 	estv.Providers = append(estv.Providers, provider)
+
 	return nil
 }

@@ -1,27 +1,26 @@
 linters:
   enable-all: true
   disable:
-  - gochecknoinits
+  - exportloopref
+  - wrapcheck
+  - gosec
+  - exhaustruct
   - gochecknoglobals
-  - goconst
+  - depguard
+  - cyclop
+  - err113
+  - exhaustive
+  - mnd
+  - ireturn
+  - tagliatelle
+  - gomnd
+  - inamedparam
+  - execinquery
   - wsl
   - lll
-  - goerr113
-  - goprintffuncname
-  - gomnd
-  - nlreturn
-  - gosec
-  - exhaustivestruct
-  - interfacer
-  - maligned
-  - scopelint
-  - golint
-  - tagliatelle
-  - revive
-  - wrapcheck
 
 output:
-  format: tab
+  formats: tab
 
 run:
   timeout: 10s
@@ -30,4 +29,7 @@ linters-settings:
   nestif:
     min-complexity: 10
   gci:
-    local-prefixes: github.com/shaunschembri/elastictv
+    sections:
+      - standard
+      - default
+      - prefix(github.com/shaunschembri/elastictv)

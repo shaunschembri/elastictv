@@ -71,13 +71,12 @@ func (q *Query) WithTitles(fuzzyMatch bool, titles ...string) *Query {
 			continue
 		}
 
-		term := queryModels{
+		q.Query.Bool.Should = append(q.Query.Bool.Should, queryModels{
 			MultiMatch: &multiMatchQuery{
 				Query:  title,
 				Fields: fields,
 			},
-		}
-		q.Query.Bool.Should = append(q.Query.Bool.Should, term)
+		})
 	}
 
 	return q
@@ -88,33 +87,32 @@ func (q *Query) WithIMDbID(imdbID string) *Query {
 		return q
 	}
 
-	term := queryModels{
+	q.Query.Bool.Must = append(q.Query.Bool.Must, queryModels{
 		Term: &termQuery{
 			IMDbID: imdbID,
 		},
-	}
-	q.Query.Bool.Must = append(q.Query.Bool.Must, term)
+	})
+
 	return q
 }
 
 func (q *Query) WithTMDbID(tmdbID int) *Query {
-	term := queryModels{
+	q.Query.Bool.Must = append(q.Query.Bool.Must, queryModels{
 		Term: &termQuery{
 			TMDbID: tmdbID,
 		},
-	}
-	q.Query.Bool.Must = append(q.Query.Bool.Must, term)
+	})
+
 	return q
 }
 
 func (q *Query) WithActors(names ...string) *Query {
 	for _, name := range names {
-		term := queryModels{
+		q.Query.Bool.Should = append(q.Query.Bool.Should, queryModels{
 			Match: &matchQuery{
 				Actor: name,
 			},
-		}
-		q.Query.Bool.Should = append(q.Query.Bool.Should, term)
+		})
 	}
 
 	return q
@@ -122,12 +120,11 @@ func (q *Query) WithActors(names ...string) *Query {
 
 func (q *Query) WithDirectors(names ...string) *Query {
 	for _, name := range names {
-		term := queryModels{
+		q.Query.Bool.Should = append(q.Query.Bool.Should, queryModels{
 			Match: &matchQuery{
 				Director: name,
 			},
-		}
-		q.Query.Bool.Should = append(q.Query.Bool.Should, term)
+		})
 	}
 
 	return q
@@ -135,12 +132,11 @@ func (q *Query) WithDirectors(names ...string) *Query {
 
 func (q *Query) WithOthers(names ...string) *Query {
 	for _, name := range names {
-		term := queryModels{
+		q.Query.Bool.Should = append(q.Query.Bool.Should, queryModels{
 			Match: &matchQuery{
 				Other: name,
 			},
-		}
-		q.Query.Bool.Should = append(q.Query.Bool.Should, term)
+		})
 	}
 
 	return q
@@ -148,66 +144,56 @@ func (q *Query) WithOthers(names ...string) *Query {
 
 func (q *Query) WithCountries(countries ...string) *Query {
 	for _, country := range countries {
-		term := queryModels{
+		q.Query.Bool.Should = append(q.Query.Bool.Should, queryModels{
 			Match: &matchQuery{
 				Country: country,
 			},
-		}
-		q.Query.Bool.Should = append(q.Query.Bool.Should, term)
+		})
 	}
 
 	return q
 }
 
 func (q *Query) WithYearRange(year, diff uint16) *Query {
-	params := rangeQueryParams{
-		GTE: year - diff,
-		LTE: year + diff,
-	}
-	term := queryModels{
+	q.Query.Bool.Must = append(q.Query.Bool.Must, queryModels{
 		Range: &rangeQuery{
-			Year: params,
+			Year: rangeQueryParams{
+				GTE: year - diff,
+				LTE: year + diff,
+			},
 		},
-	}
+	})
 
-	q.Query.Bool.Must = append(q.Query.Bool.Must, term)
 	return q
 }
 
 func (q *Query) WithType(docType Type) *Query {
-	term := queryModels{
+	q.Query.Bool.Must = append(q.Query.Bool.Must, queryModels{
 		Term: &termQuery{
 			Type: docType,
 		},
-	}
+	})
 
-	q.Query.Bool.Must = append(q.Query.Bool.Must, term)
 	return q
 }
 
 func (q *Query) WithTVShowTMDbID(tmdbTvShowID int) *Query {
-	term := queryModels{
+	q.Query.Bool.Filter = append(q.Query.Bool.Filter, queryModels{
 		Term: &termQuery{
 			TVShowTMDbID: tmdbTvShowID,
 		},
-	}
+	})
 
-	q.Query.Bool.Filter = append(q.Query.Bool.Filter, term)
 	return q
 }
 
 func (q *Query) WithSeasonNumber(season uint16) *Query {
-	if season == 0 {
-		return q
-	}
-
-	term := queryModels{
+	q.Query.Bool.Must = append(q.Query.Bool.Must, queryModels{
 		Term: &termQuery{
 			SeasonNo: season,
 		},
-	}
+	})
 
-	q.Query.Bool.Must = append(q.Query.Bool.Must, term)
 	return q
 }
 
@@ -216,24 +202,22 @@ func (q *Query) WithEpisodeNumber(episode uint16) *Query {
 		return q
 	}
 
-	term := queryModels{
+	q.Query.Bool.Must = append(q.Query.Bool.Must, queryModels{
 		Term: &termQuery{
 			EpisodeNo: episode,
 		},
-	}
+	})
 
-	q.Query.Bool.Must = append(q.Query.Bool.Must, term)
 	return q
 }
 
 func (q *Query) WithGenres(genres ...string) *Query {
 	for _, genre := range genres {
-		term := queryModels{
+		q.Query.Bool.Should = append(q.Query.Bool.Should, queryModels{
 			Match: &matchQuery{
 				Genre: genre,
 			},
-		}
-		q.Query.Bool.Should = append(q.Query.Bool.Should, term)
+		})
 	}
 
 	return q

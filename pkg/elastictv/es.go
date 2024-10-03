@@ -27,6 +27,7 @@ func (estv ElasticTV) queryES(query *Query, index string, doc interface{}) (stri
 	)
 	if err != nil {
 		buf, _ := estv.encodeQuery(query)
+
 		return "", 0, fmt.Errorf("error querying elasticsearch: Error: %w Query: %s",
 			err, buf.String())
 	}
@@ -39,6 +40,7 @@ func (estv ElasticTV) queryES(query *Query, index string, doc interface{}) (stri
 
 	if esDoc.Error.Reason != "" {
 		buf, _ := estv.encodeQuery(query)
+
 		return "", 0, fmt.Errorf("error of type [%s] return from elasticsearch: Error %s Query: %s",
 			esDoc.Error.Type, esDoc.Error.Reason, buf.String())
 	}
@@ -86,6 +88,7 @@ func (estv ElasticTV) index(index, docID string, doc interface{}) error {
 
 	if res.IsError() {
 		response, _ := io.ReadAll(res.Body)
+
 		return fmt.Errorf("[%s] Error indexing document ID=%s: %s",
 			res.Status(), request.DocumentID, string(response))
 	}
@@ -140,6 +143,7 @@ func (estv ElasticTV) UpsertTitle(title Title) error {
 	}
 
 	title.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05.0000000")
+
 	return estv.index(estv.Index.Title, recordID, title)
 }
 
@@ -155,5 +159,6 @@ func (estv ElasticTV) UpsertEpisode(episode Episode) error {
 	}
 
 	episode.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05.0000000")
+
 	return estv.index(estv.Index.Episode, recordID, episode)
 }

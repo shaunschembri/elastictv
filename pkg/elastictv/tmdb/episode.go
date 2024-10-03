@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/shaunschembri/elastictv/pkg/elastictv"
 )
 
@@ -80,6 +81,7 @@ func (t TMDb) searchEpisodeFromIMDbID(searchItem elastictv.SearchItem) error {
 	}
 
 	var errors *multierror.Error
+
 	for _, episode := range findResults.TvEpisodeResults {
 		episodeSearchItem := elastictv.SearchItem{
 			Query:     episode.ShowID,
