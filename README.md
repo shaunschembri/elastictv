@@ -1,6 +1,6 @@
 # ElasticTV
 
-ElasticTV sources information a movie or a TV show and caches them in an Elasticsearch to speed up subsequent queries to the same title.  The project is under active development and currently can only source data from [The Movie Database (TMDb)](https://www.themoviedb.org/) and aims to be compatible to the schema used by [ElasticTMDB](https://github.com/shaunschembri/ElasticTMDB), however it has been designed to support other providers other then (TMDb).
+ElasticTV sources information a movie or a TV show and caches them in an Elasticsearch to speed up subsequent queries to the same title.  The project is under development and currently can only source data from [The Movie Database (TMDb)](https://www.themoviedb.org/) however it has been designed to support other providers other then TMDb.
 
 ## Planned features
 - Update schema to support multiple providers.
