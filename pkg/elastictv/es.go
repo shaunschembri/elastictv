@@ -12,6 +12,8 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 )
 
+const timeFormat = "2006-01-02T15:04:05.0000000"
+
 func (estv ElasticTV) queryES(query *Query, index string, doc interface{}) (string, float64, error) {
 	buf, err := estv.encodeQuery(query)
 	if err != nil {
@@ -142,7 +144,7 @@ func (estv ElasticTV) UpsertTitle(title Title) error {
 		return err
 	}
 
-	title.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05.0000000")
+	title.Timestamp = time.Now().UTC().Format(timeFormat)
 
 	return estv.index(estv.Index.Title, recordID, title)
 }
@@ -158,7 +160,23 @@ func (estv ElasticTV) UpsertEpisode(episode Episode) error {
 		return err
 	}
 
-	episode.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05.0000000")
+	episode.Timestamp = time.Now().UTC().Format(timeFormat)
 
 	return estv.index(estv.Index.Episode, recordID, episode)
+}
+
+func (estv ElasticTV) RecordExpired(query *Query, index string) bool {
+	var docTimestamp Timestamp
+
+	docID, _, err := estv.queryES(query, index, &docTimestamp)
+	if err != nil || docID == "" {
+		return true
+	}
+
+	lastUpdated, err := time.Parse(timeFormat, docTimestamp.Timestamp)
+	if err != nil {
+		return true
+	}
+
+	return lastUpdated.Before(estv.UpdateAfter)
 }

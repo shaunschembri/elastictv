@@ -162,7 +162,8 @@ func (t TMDb) searchMovieByActor(actor any, year uint16) error {
 }
 
 func (t TMDb) getMovieDetails(tmdbID int, originalLanguage string) error {
-	if t.hasBeenIndexed(tmdbID, elastictv.MovieType) {
+	query := elastictv.NewQuery().WithTMDbID(tmdbID).WithType(elastictv.MovieType)
+	if !t.estv.RecordExpired(query, t.estv.Index.Title) {
 		return nil
 	}
 

@@ -2,7 +2,6 @@ package elastictv
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/viper"
@@ -26,12 +25,8 @@ func (estv ElasticTV) lookupEpisodeFromEpisodeIMDbID(params LookupEpisodeParams)
 	episodeQuery := NewQuery().WithIMDbID(params.IMDbID)
 	episodeSearchItem := NewSearchItem(EpisodeType, IMDbIDSearchAttribute, params.IMDbID)
 
-	episode, err := estv.lookupEpisodeDetails(episodeQuery, episodeSearchItem)
-	if err != nil {
-		log.Printf("failed to lookup episode with IMDB ID [ %s ]. Will use details : %v", params.IMDbID, err)
-	}
-
-	// If episode was not found by IMDb ID lookup, try using the
+	episode, _ := estv.lookupEpisodeDetails(episodeQuery, episodeSearchItem)
+	// If episode was not found by IMDb ID lookup, lookup using details
 	if episode == nil {
 		return estv.lookupEpisodeFromDetails(params)
 	}
@@ -89,17 +84,12 @@ func (estv ElasticTV) lookupEpisodeFromDetails(params LookupEpisodeParams) (*Tit
 }
 
 func (estv ElasticTV) lookupEpisodeDetails(query *Query, searchItem SearchItem) (*Episode, error) {
-	episode := &Episode{}
-	score, err := estv.getRecordWithScore(query, estv.Index.Episode, episode)
-	if err != nil {
-		return nil, fmt.Errorf("error querying for episode [ %s ] : %w", searchItem, err)
-	}
-	if score > 0 {
+	episode, err := estv.getEpisode(query, searchItem)
+	if episode != nil {
 		return episode, nil
 	}
 
-	alreadySearched, err := estv.alreadySearched(searchItem)
-	if err != nil || alreadySearched {
+	if !estv.RecordExpired(NewQuery().WithSearchItem(searchItem), estv.Index.Search) {
 		return nil, err
 	}
 
@@ -118,13 +108,21 @@ func (estv ElasticTV) lookupEpisodeDetails(query *Query, searchItem SearchItem) 
 		errors = multierror.Append(errors, err)
 	}
 
-	score, err = estv.getRecordWithScore(query, estv.Index.Episode, episode)
+	episode, err = estv.getEpisode(query, searchItem)
+
+	return episode, multierror.Append(errors, err).ErrorOrNil()
+}
+
+func (estv ElasticTV) getEpisode(query *Query, searchItem SearchItem) (*Episode, error) {
+	episode := &Episode{}
+	score, err := estv.getRecordWithScore(query, estv.Index.Episode, episode)
 	if err != nil {
 		return nil, fmt.Errorf("error querying for episode [ %s ] : %w", searchItem, err)
 	}
+
 	if score > 0 {
 		return episode, nil
 	}
 
-	return nil, multierror.Append(errors, fmt.Errorf("episode [ %s ] was not found", searchItem))
+	return nil, fmt.Errorf("episode not found [ %s ] : %w", searchItem, err)
 }

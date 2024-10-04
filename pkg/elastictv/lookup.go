@@ -81,10 +81,7 @@ func (estv ElasticTV) searchTitles(searchTitles SearchItems) *multierror.Error {
 	var errors *multierror.Error
 
 	for _, item := range searchTitles {
-		alreadySearched, err := estv.alreadySearched(item)
-		if err != nil || alreadySearched {
-			errors = multierror.Append(errors, err)
-
+		if !estv.RecordExpired(NewQuery().WithSearchItem(item), estv.Index.Search) {
 			continue
 		}
 

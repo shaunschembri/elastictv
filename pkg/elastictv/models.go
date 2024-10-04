@@ -1,8 +1,6 @@
 package elastictv
 
-import (
-	"encoding/json"
-)
+import "encoding/json"
 
 type Title struct {
 	Alias       []string    `json:"alias,omitempty"`
@@ -53,6 +51,10 @@ type IDs struct {
 type Rating struct {
 	Source string  `json:"source,omitempty"`
 	Value  float32 `json:"value,omitempty"`
+}
+
+type Timestamp struct {
+	Timestamp string `json:"@timestamp"`
 }
 
 type esResult struct {

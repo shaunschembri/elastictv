@@ -82,17 +82,6 @@ func (s SearchItem) String() string {
 	return strings.TrimSpace(text)
 }
 
-func (estv ElasticTV) alreadySearched(item SearchItem) (bool, error) {
-	query := NewQuery().WithSearchItem(item)
-
-	id, err := estv.GetRecordID(query, estv.Index.Search)
-	if err != nil {
-		return false, fmt.Errorf("failed to fetch search item : %w", err)
-	}
-
-	return id != "", nil
-}
-
 func (estv ElasticTV) indexSearchItem(item SearchItem) error {
 	item.Timestamp = time.Now().UTC().Format("2006-01-02T15:04:05.0000000")
 	if err := estv.index(estv.Index.Search, "", item); err != nil {

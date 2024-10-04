@@ -125,13 +125,13 @@ func (t TMDb) getTVShowDetails(tvShowID any, originalLanguage ...string) error {
 		return fmt.Errorf("%s: cannot convert id [ %s ] TMDb", t.Name(), tvShowID)
 	}
 
-	if t.hasBeenIndexed(tmdbID, elastictv.TvShowType) {
+	query := elastictv.NewQuery().WithTMDbID(tmdbID).WithType(elastictv.TvShowType)
+	if !t.estv.RecordExpired(query, t.estv.Index.Title) {
 		return nil
 	}
 
 	options := t.getDefaultOptions()
 	options["append_to_response"] = "translations,alternative_titles,credits,external_ids"
-
 	if len(originalLanguage) > 0 {
 		options["language"] = t.getDetailsLanguage(originalLanguage[0])
 	}
