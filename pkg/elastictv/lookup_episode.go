@@ -124,5 +124,5 @@ func (estv ElasticTV) getEpisode(query *Query, searchItem SearchItem) (*Episode,
 		return episode, nil
 	}
 
-	return nil, fmt.Errorf("episode not found [ %s ] : %w", searchItem, err)
+	return nil, fmt.Errorf("episode not found [ %s ]", searchItem)
 }

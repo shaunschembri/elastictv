@@ -23,7 +23,7 @@ func (c LookupCommonParams) hasCredits() bool {
 
 func (c LookupCommonParams) getCommonTitleQuery() *Query {
 	return NewQuery().
-		WithTitles(c.hasCredits(), c.Title...).
+		WithTitles(c.Title...).
 		WithGenres(c.Genre...).
 		WithDirectors(c.Director...).
 		WithActors(c.Actor...).

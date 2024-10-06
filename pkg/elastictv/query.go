@@ -60,12 +60,7 @@ func NewQuery() *Query {
 	return &Query{}
 }
 
-func (q *Query) WithTitles(fuzzyMatch bool, titles ...string) *Query {
-	fields := []string{"title", "alias"}
-	if !fuzzyMatch {
-		fields = []string{"title.keyword", "alias.keyword"}
-	}
-
+func (q *Query) WithTitles(titles ...string) *Query {
 	for _, title := range titles {
 		if title == "" {
 			continue
@@ -74,7 +69,12 @@ func (q *Query) WithTitles(fuzzyMatch bool, titles ...string) *Query {
 		q.Query.Bool.Should = append(q.Query.Bool.Should, queryModels{
 			MultiMatch: &multiMatchQuery{
 				Query:  title,
-				Fields: fields,
+				Fields: []string{"title.keyword", "alias.keyword"},
+			},
+		}, queryModels{
+			MultiMatch: &multiMatchQuery{
+				Query:  title,
+				Fields: []string{"title", "alias"},
 			},
 		})
 	}
