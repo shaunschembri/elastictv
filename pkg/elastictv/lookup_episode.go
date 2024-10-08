@@ -32,7 +32,7 @@ func (estv ElasticTV) lookupEpisodeFromEpisodeIMDbID(params LookupEpisodeParams)
 	}
 
 	tvshow, score, err := estv.lookupTitle(
-		NewQuery().WithTMDbID(episode.TVShowIDs.TMDb),
+		NewQuery().WithTMDbID(episode.TVShowIDs.TMDb).WithType(TvShowType),
 		SearchItems{NewSearchItem(TvShowType, TMDbIDSearchAttribute, episode.TVShowIDs.TMDb)},
 		0, 0,
 	)
