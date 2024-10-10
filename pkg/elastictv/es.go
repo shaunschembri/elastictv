@@ -165,7 +165,7 @@ func (estv ElasticTV) UpsertEpisode(episode Episode) error {
 	return estv.index(estv.Index.Episode, recordID, episode)
 }
 
-func (estv ElasticTV) RecordExpired(query *Query, index string) bool {
+func (estv ElasticTV) IsRecordExpired(query *Query, index string) bool {
 	var docTimestamp Timestamp
 
 	docID, _, err := estv.queryES(query, index, &docTimestamp)
@@ -173,7 +173,11 @@ func (estv ElasticTV) RecordExpired(query *Query, index string) bool {
 		return true
 	}
 
-	lastUpdated, err := time.Parse(timeFormat, docTimestamp.Timestamp)
+	return estv.RequiresUpdate(docTimestamp.Timestamp)
+}
+
+func (estv ElasticTV) RequiresUpdate(timestamp string) bool {
+	lastUpdated, err := time.Parse(timeFormat, timestamp)
 	if err != nil {
 		return true
 	}

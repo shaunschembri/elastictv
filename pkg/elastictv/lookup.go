@@ -55,7 +55,7 @@ func (estv ElasticTV) lookupTitle(query *Query, searchItems SearchItems, minScor
 		return nil, 0, fmt.Errorf("error looking for title: %w", err)
 	}
 
-	if title.Title != "" && score > minScoreNoSearch {
+	if score > minScoreNoSearch && !estv.RequiresUpdate(title.Timestamp) {
 		return title, score, nil
 	}
 
@@ -81,10 +81,6 @@ func (estv ElasticTV) searchTitles(searchTitles SearchItems) *multierror.Error {
 	var errors *multierror.Error
 
 	for _, item := range searchTitles {
-		if !estv.RecordExpired(NewQuery().WithSearchItem(item), estv.Index.Search) {
-			continue
-		}
-
 		for _, provider := range estv.Providers {
 			var err error
 

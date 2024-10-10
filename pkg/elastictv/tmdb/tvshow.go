@@ -126,7 +126,7 @@ func (t TMDb) getTVShowDetails(tvShowID any, originalLanguage ...string) error {
 	}
 
 	query := elastictv.NewQuery().WithTMDbID(tmdbID).WithType(elastictv.TvShowType)
-	if !t.estv.RecordExpired(query, t.estv.Index.Title) {
+	if !t.estv.IsRecordExpired(query, t.estv.Index.Title) {
 		return nil
 	}
 

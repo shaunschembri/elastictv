@@ -84,13 +84,9 @@ func (estv ElasticTV) lookupEpisodeFromDetails(params LookupEpisodeParams) (*Tit
 }
 
 func (estv ElasticTV) lookupEpisodeDetails(query *Query, searchItem SearchItem) (*Episode, error) {
-	episode, err := estv.getEpisode(query, searchItem)
-	if episode != nil {
+	episode, _ := estv.getEpisode(query, searchItem)
+	if episode != nil && !estv.RequiresUpdate(episode.Timestamp) {
 		return episode, nil
-	}
-
-	if !estv.RecordExpired(NewQuery().WithSearchItem(searchItem), estv.Index.Search) {
-		return nil, err
 	}
 
 	var errors *multierror.Error
@@ -108,7 +104,7 @@ func (estv ElasticTV) lookupEpisodeDetails(query *Query, searchItem SearchItem) 
 		errors = multierror.Append(errors, err)
 	}
 
-	episode, err = estv.getEpisode(query, searchItem)
+	episode, err := estv.getEpisode(query, searchItem)
 
 	return episode, multierror.Append(errors, err).ErrorOrNil()
 }
