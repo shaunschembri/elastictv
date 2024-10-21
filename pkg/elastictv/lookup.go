@@ -81,6 +81,11 @@ func (estv ElasticTV) searchTitles(searchTitles SearchItems) *multierror.Error {
 	var errors *multierror.Error
 
 	for _, item := range searchTitles {
+		query := NewQuery().WithSearchItem(item)
+		if !estv.IsRecordExpired(query, estv.Index.Search) {
+			continue
+		}
+
 		for _, provider := range estv.Providers {
 			var err error
 
